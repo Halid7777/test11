@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Haltester — Тренажёр тестов</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="header">
+      <div class="brand-block">
+        <div class="brand-row">
+          <span class="brand-mark">HT</span>
+          <h1 class="title">Haltester</h1>
+          <span class="version-pill">v2.4</span>
+        </div>
+        <p class="subtitle">Тренажёр тестов • Гидравлика и водоснабжение • Пожарная безопасность</p>
+      </div>
+
+      <div class="header-actions">
+        <button id="statsBtn" type="button" onclick="openStatsModal()" class="btn btn-ghost">
+          📊 Статистика
+        </button>
+        <button
+          id="themeToggleBtn"
+          type="button"
+          onclick="toggleTheme()"
+          class="btn btn-ghost"
+          aria-label="Переключить тему"
+        >
+          <span id="themeIcon">🌙</span>
+          <span id="themeLabel">Ночная</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Главное меню предметов и настроек запуска -->
+    <main id="menuView" class="view">
+      <section class="hero-strip">
+        <div class="hero-stat">
+          <span class="hero-stat-label">Всего вопросов в базе</span>
+          <strong id="totalQuestionsCount" class="hero-stat-value">0</strong>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-label">Ошибок в базе повторения</span>
+          <strong id="totalMistakesCount" class="hero-stat-value warn-text">0</strong>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-label">Режим запуска</span>
+          <div class="mode-pills" id="modePills">
+            <button type="button" data-mode="training" class="mode-pill active" onclick="setLaunchMode('training')">Обучение</button>
+            <button type="button" data-mode="exam" class="mode-pill" onclick="setLaunchMode('exam')">Экзамен</button>
+            <button type="button" data-mode="mistakes" class="mode-pill" onclick="setLaunchMode('mistakes')">Над ошибками</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="launch-config card">
+        <div class="config-grid">
+          <div class="config-item">
+            <label for="chunkSelect" class="config-label">Часть / диапазон вопросов</label>
+            <select id="chunkSelect" class="select-input"></select>
+          </div>
+          <div class="config-item">
+            <label for="timerSelect" class="config-label">Таймер (мин)</label>
+            <select id="timerSelect" class="select-input">
+              <option value="0">Без таймера</option>
+              <option value="10">10 минут</option>
+              <option value="15">15 минут</option>
+              <option value="20">20 минут</option>
+              <option value="30">30 минут</option>
+              <option value="45">45 минут</option>
+            </select>
+          </div>
+          <div class="config-item config-checks">
+            <label class="check-label">
+              <input type="checkbox" id="shuffleQuestionsCheck" checked />
+              <span>Перемешать вопросы</span>
+            </label>
+            <label class="check-label">
+              <input type="checkbox" id="shuffleOptionsCheck" checked />
+              <span>Перемешать варианты</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <div class="grid-cards" id="testCards"></div>
+    </main>
+
+    <!-- Экран прохождения теста -->
+    <section id="quizView" class="view hidden">
+      <div class="topbar card">
+        <div class="topbar-left">
+          <button type="button" onclick="confirmExitToMenu()" class="btn btn-sm">← Меню</button>
+          <span id="activeModeBadge" class="mode-badge">Обучение</span>
+        </div>
+        <div class="topbar-center">
+          <div id="progressText" class="progress-label">Вопрос 1 из 1</div>
+          <div id="scoreText" class="score-text">Верно: 0</div>
+        </div>
+        <div class="topbar-right">
+          <div id="timerBox" class="timer-badge hidden">⏱ <span id="timerDisplay">00:00</span></div>
+          <button type="button" onclick="finishSessionNow()" class="btn btn-sm btn-outline-danger">Завершить</button>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+
+      <article class="card question-card">
+        <div class="q-meta-row">
+          <span id="qNumBadge" class="q-num">Вопрос #1</span>
+          <span id="qMetaBadge" class="q-meta"></span>
+        </div>
+
+        <h2 id="questionText" class="q-text"></h2>
+        <div id="optionsList" class="options"></div>
+        <div id="feedbackBox" class="feedback hidden"></div>
+
+        <div class="nav-row">
+          <button id="prevBtn" type="button" onclick="prevQuestion()" class="btn">← Назад</button>
+          <div class="nav-mid">
+            <button id="markReviewBtn" type="button" onclick="toggleMarkCurrent()" class="btn btn-sm btn-ghost">☆ В повтор</button>
+          </div>
+          <button id="nextBtn" type="button" onclick="nextQuestion()" class="btn btn-primary">Далее →</button>
+        </div>
+      </article>
+
+      <div class="card navigator-card">
+        <div class="navigator-header">
+          <span>Навигация по вопросам</span>
+          <span class="navigator-legend">
+            <i class="dot dot-ok"></i> Верно
+            <i class="dot dot-bad"></i> Ошибка
+            <i class="dot dot-cur"></i> Текущий
+          </span>
+        </div>
+        <div id="questionGrid" class="question-grid"></div>
+      </div>
+    </section>
+
+    <!-- Экран результатов -->
+    <section id="resultView" class="view hidden">
+      <div class="card result-card">
+        <div id="resultGradePill" class="grade-pill">Результат</div>
+        <h2 class="result-title">Сессия завершена</h2>
+        <p id="resultSummary" class="result-summary"></p>
+
+        <div class="result-metrics" id="resultMetrics"></div>
+
+        <div class="result-actions">
+          <button id="retryMistakesBtn" type="button" onclick="retrySessionMistakes()" class="btn btn-primary hidden">
+            Отработать ошибки сессии
+          </button>
+          <button type="button" onclick="restartCurrentSession()" class="btn">Пройти заново</button>
+          <button type="button" onclick="showMenu()" class="btn btn-ghost">К выбору предмета</button>
+        </div>
+      </div>
+
+      <div id="reviewListCard" class="card review-card hidden">
+        <h3 class="review-title">Разбор ответов</h3>
+        <div id="reviewItems" class="review-items"></div>
+      </div>
+    </section>
+
+    <!-- Модальное окно статистики -->
+    <div id="statsModal" class="modal-backdrop hidden" onclick="closeStatsModal(event)">
+      <div class="modal-card card" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Статистика и прогресс Haltester</h3>
+          <button type="button" onclick="closeStatsModal()" class="btn btn-sm">✕</button>
+        </div>
+        <div id="statsContent" class="stats-body"></div>
+        <div class="modal-footer">
+          <button type="button" onclick="clearSavedProgress()" class="btn btn-sm btn-outline-danger">Сбросить прогресс</button>
+          <button type="button" onclick="closeStatsModal()" class="btn btn-sm btn-primary">Закрыть</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="questions.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
